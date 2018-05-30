@@ -1,0 +1,40 @@
+#!/bin/bash
+#
+# Batch generate PFX
+# example command:
+# openssl pkcs12 -export -out ./serv1.example.com.ssl/serv1.example.com-cert.pfx -inkey ./serv1.example.com.ssl/serv1.example.com.key -in ./serv1.example.com.ssl/serv1.example.com.crt -certfile CHAINS.crt -password env:KEY
+
+# This script needs to read a file listing all the .crt files with relative path. Generate like this:
+# find . -type f \( -name "*.example.com.crt" ! -name "full*" ! -name "chain*" \) > certs.list
+
+#Call this script like `bash generate-pfx.sh certs.list`
+
+#Set up variables
+KEY=
+CERT=
+CERTDIR=
+
+if [ -f $@ ]
+ then
+   { cat $@; } | while read line
+
+   do
+      if [ -f $line ]
+      then
+      # KEY contains 21 bytes of randomness for a random password
+      # stored as environment variable which openssl can ingest
+         export KEY=$(openssl rand -hex 21)
+         export CERT=$(basename $line)
+         export CERTDIR=$(dirname $line)
+         export FQDN=$(basename $line ".crt")
+         # Save the password to a file for reference later
+         echo $FQDN : $KEY > $CERTDIR/password-$FQDN.txt
+      # Generate PKCS12 PFX file
+         openssl pkcs12 -export -out ${CERTDIR}/${FQDN}-cert.pfx \
+            -inkey ${CERTDIR}/${FQDN}.key \
+            -in ${line} -certfile CHAINS.crt \
+            -password env:KEY
+         unset KEY
+      fi
+   done
+fi
