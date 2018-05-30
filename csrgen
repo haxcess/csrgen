@@ -31,7 +31,7 @@ do
 				mkdir "${CN}.ssl"
 				openssl req -batch -new -nodes \
 					-keyout "${CN}.ssl/key-${CN}.pem" \
-					-out "${CN}.ssl/csr-${CN}.pem" \
+					-out "${CN}.ssl/${CN}.csr" \
 					-config openssl.cnf \
 					-subj "${SUBJECT}${CN}" \
 						> "${CN}.ssl/log-${CN}.txt" \
